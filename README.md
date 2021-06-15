@@ -157,6 +157,7 @@ AddRegisterIOFilterToFilterRule(L"c:\\test\\*",DELETE,0,0);
 1. Monitor the file I/O events, get the notification of the new file creation, file was written, file was renamed, file was deleted, file security was changed, to know who ( user name and process name ) made those I/Os.
 To track the file I/O events, first we need to add the filter rule for the file name filter mask which we want to manage, then register the I/O events we want to track, the register I/O events can be the combination of the bits of the following enumeration. The events will be sent after the I/O was completed and the file handle was closed.
 
+```
 typedef enum FileEventType
 {  
   	FILE_WAS_CREATED	= 0x00000020,
@@ -176,11 +177,12 @@ Track the file change events ( written, renamed, deleted ) for files in folder c
 
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS, L"c:\\test\\*", 1);
 RegisterEventTypeToFilterRule(L"c:\\test\\*",FILE_WAS_WRITTEN|FILE_WAS_RENAMED|FILE_WAS_DELETED); 
-
+```
 
 2. Monitor the specific file I/O requests, get the notification to know the file open options ( DesiredAccess, ShareMode, CreationDisposition), to know the read or write offset and length, to know what file information ( file size, file creation time, change time, file attributes) was queried or set.
 To track the specific file I/O request, first we need to add the filter rule for the file path filter mask which we want to manage, then register the I/O request type we want to track, the register I/O requests can be the combination of the bits of the following enumeration.
 
+```
 typedef enum  MessageType
 {
 	POST_CREATE			= 0x00000002,	
@@ -211,68 +213,91 @@ Get the notification when the file was opened/read for files in folder c:\test:
 
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS, L"c:\\test\\*", 1);
 RegisterMonitorToFilterRule(L"c:\\test\\*",POST_CREATE|POST_FASTIO_READ|POST_CACHE_READ|POST_NOCACHE_READ|POST_PAGING_IO_READ); 
+```
      
-What can you do with the File Control Filter Driver SDK
+## What can you do with the File Control Filter Driver SDK
 
 1. Block the new file creation via configuring the access control flag of the filter rule.
+
+```
 Example:
 Block the new file creation in folder c:\test:
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS&(~ALLOW_OPEN_WITH_CREATE_OR_OVERWRITE_ACCESS), L"c:\\test\\*", 1);
+```
 
 2. Prevent your sensitive files from being copied out of your protected folder
+
+```
 Example:
 Prevent the files in folder c:\test from being copied out.
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS&(~ALLOW_COPY_PROTECTED_FILES_OUT), L"c:\\test\\*", 1);
-     
+```
+
 3. Prevent your sensitive files from being modified, renamed or deleted
+
+```
 Example:
 Prevent the file from being modified, renamed or deleted in folder c:\test:
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS&(~(ALLOW_WRITE_ACCESS|ALLOW_FILE_RENAME|ALLOW_FILE_DELETE), L"c:\\test\\*", 1);
+```
 
 4. Prevent your sensitive files from being accessed from the network computer
+
+```
 Example:
 Protect the files in folder c:\test, block the file access from the network.
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS&(~ALLOW_FILE_ACCESS_FROM_NETWORK), L"c:\\test\\*", 1);
+```
 
 5. Hide your sensitive files to the specific processes or users
-  
+
+```
 Example:
 Hide the files in folder c:\test for process "explorer.exe"
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS|HIDE_FILES_IN_DIRECTORY_BROWSING, L"c:\\test\\*", 1);
 AddIncludeProcessNameToFilterRule(L"c:\\test\\*",L"explorer.exe");
 AddHiddenFileMaskToFilterRule(L"c:\\test\\*",L"*.*");
+```
 
 6. Reparse your file open from one location to another location.
+
+```
 Example:
 Reparse the file open in folder c:\test to another folder c:\reparseFolder"
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS|REPARSE_FILE_OPEN, L"c:\\test\\*", 1);
 AddReparseFileMaskToFilterRule(L"c:\\test\\*",L"c:\\reparseFolder\\*");
+```
 
 7. Allow or deny the specific file I/O operation via registering the specific I/O callback routine based on the process name, user name or the file I/O information.
+```
 Example:
 Register the PRE_CREATE, PRE_SETINFORMATION I/O for folder c:\test, you can allow or deny the file opern, creation, deletion, rename in the callback routine.
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS, L"c:\\test\\*", 1);
 RegisterControlToFilterRule(L"c:\\test\\*",PRE_CREATE|PRE_SET_INFORMATION);
-
+```
 8. Authorize or De-authorize the file access rights (read,write,rename,delete..) to the specific processes or users.
+```
 Example:
 Set the full access rights to the process "notepad.exe", set the readonly access rights to the process "wordpad.exe", remove all the access rights to other processes.
 AddFileFilterRule(LEAST_ACCESS_FLAG, L"c:\\test\\*", 1);
 AddProcessRightsToFilterRule(L"c:\\test\\*",L"notepad.exe",ALLOW_MAX_RIGHT_ACCESS);
 AddProcessRightsToFilterRule(L"c:\\test\\*",L"wordpad.exe",ALLOW_MAX_RIGHT_ACCESS&(~(ALLOW_OPEN_WITH_CREATE_OR_OVERWRITE_ACCESS|ALLOW_WRITE_ACCESS|ALLOW_FILE_RENAME|ALLOW_FILE_DELETE|ALLOW_SET_INFORMATION));
-
+```
 ## What can you do with the Transparent File Encryption Filter Driver SDK
 
 1. Automatically encrypt or decrypt the file in Windows kernel memory, always keep the file encryped on disk. Per file encryption on the fly, protect your sensitive files with data encryption at rest.
+```
 Example:
 Transparent encrypt or decrypt files in folder c:\test automatically with AES 256bits key.
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS|FILE_ENCRYPTION_RULE, L"c:\\test\\*", 1);
-
 //256 bit,32bytes encrytpion key
 unsigned char key[] = {0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4};
 AddEncryptionKeyToFilterRule(L"c:\\test\\*",sizeof(key),key);
+```
 
 2. Create white list and black list of the users and processes for encrypted files, the white list of the users or processes will get the decrypted data when they read the encrypted file, the black list of the users or pocesses will get the encrypted data when they read the encrypted files.
+
+```
 Example:
 Transparent encrypt files in folder c:\test automatically with AES 256bits key, only authorized process "notepad.exe" can read the encrypted file, 
 so when you copy the encrypted file in Windows explorer, the encrypted files will be copied out instead of the decrypted files.
@@ -282,9 +307,11 @@ AddFileFilterRule((ALLOW_MAX_RIGHT_ACCESS|FILE_ENCRYPTION_RULE)&(~ALLOW_READ_ENC
 unsigned char key[] = {0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4};
 AddEncryptionKeyToFilterRule(L"c:\\test\\*",sizeof(key),key);
 AddProcessRightsToFilterRule(L"c:\\test\\*",L"notepad.exe",ALLOW_MAX_RIGHT_ACCESS);
+```
 
 3. Only encrypt your files when it was sending out or copying out from your computer, your file is not encrypted in the local disk, the data was encrypted only when it was read.
 
+```
 Example:
 The files will be encrypted when the process "outlook.exe"  read the files in folder c:\test, the new created files in folder c:\test won't be encrypted automatically.
 
@@ -301,6 +328,7 @@ AddFileFilterRule((ALLOW_MAX_RIGHT_ACCESS|FILE_ENCRYPTION_RULE)&(~ALLOW_ENCRYPT_
 //256 bit,32bytes encrytpion key
 unsigned char key[] = {0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4};
 AddEncryptionKeyToFilterRule(L"c:\\dropFolder\\*",sizeof(key),key);
+```
 
 ## What can you do with the Process Filter Driver SDK
 
@@ -333,17 +361,20 @@ AddFileControlToProcessByName(wcslen(L"notepad.exe")*2, L"notepad.exe", wcslen(L
     
 ## What can you do with the Registry Filter Driver SDK
 
-1.Prevent the registries from being modified for the specific processes, restrict the registry access rights to the specific processes.
+1. Prevent the registries from being modified for the specific processes, restrict the registry access rights to the specific processes.
+```
 Example:
 Set the registry readonly access rights to the process "notepad.exe".
 
 AddRegistryFilterRuleByProcessName(wcslen(L"notepad.exe")*2, L"notepad.exe",ALLOW_READ_REGITRY_ACCESS_FLAG,0,0 );
-  
+```  
 2. Get the notification of the registry operations to the specific processes by registering the registry callback class.
+
+```
 Example:
 Get all the notification of the registry operations for the process "notepad.exe".
 
 AddRegistryFilterRuleByProcessName(wcslen(L"notepad.exe")*2, L"notepad.exe",REG_MAX_ACCESS_FLAG,MAX_REG_CALLBACK_CLASS,0 );
-
+```
 [For more information, please go to here:](https://www.easefilter.com/programming.htm)
 
