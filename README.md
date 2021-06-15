@@ -5,15 +5,15 @@ EaseFilter file system filter driver is a kernel-mode component that runs as par
 
 ## What can you do with the EaseFilter SDK
 
-A.File and Folder Monitoring
+1. File and Folder Monitoring
   Monitor Windows file I/O activities in real time, track the file access and changes, monitor file and folder permission changes, audit who is writing, deleting, moving or reading files, report the user name and process name, get the user name and the ip address when the Windows file server's file is accessed by network user.
-B.File Access Control and Security Control
+2. File Access Control and Security Control
   Control Windows file I/O activities in real time, intercept the file system call, modify its content before or after the request goes down to the file system, allow/deny/cancel its execution based on filter rules. Protect the sensitive files, you can verify the user identity, authenticate them, authorize the file access, prevent the confidential files from being accessed, modified, renamed, deleted, or read by unauthorized users, you also hide your sensitive files to the unauthorized users, protect intellectual property from being copied.
-C.File Encryption At-Rest for Enterprise
+3. File Encryption At-Rest for Enterprise
   Enterprise transparent and continuous file-level encryption protects against unauthorized access by users and processes, secures unstructured data for the enterprise. High-performance hardware accelerated encryption, encryption overhead is minimized using the AES hardware encryption capabilities available in modern CPUs.
-D.Process Monitoring and Protection
+4. Process Monitoring and Protection
  Get the callback notification for the process/thread creation or termination, prevent the untrusted executable binaries ( malwares) from being launched.
-E.Registry Monitoring and Protection
+5. Registry Monitoring and Protection
  Protect Windows core registry keys and values and prevent potentially damaging system configuration changes, besides operating system files. Get the notifications of each registry operation when the registry key was accessed or modified by the applications.
 
 ## How to use EaseFilter SDK
@@ -31,6 +31,8 @@ RegisterMessageCallback(ULONG ThreadCount,Proto_Message_Callback MessageCallback
 
 Setup the filter driver configuration
 To setup the filter driver type with the combination of the below filter type enumeration, then you have have the associated features of the filter driver. If you register the I/O events or callback, setup the maximum time of the filter driver waits for the response from the user mode application.
+
+```C++
 Typedef  enum  FilterType 
 {
 	FILE_SYSTEM_CONTROL		= 1,
@@ -41,11 +43,13 @@ Typedef  enum  FilterType
 };
 		
 SetFilterType(ULONG FilterType);
+```
 
 SetConnectionTimeout(ULONG TimeOutInSeconds);
 Filter the file I/O with file filter rule
 To know which file we want to filter, we need to set the filter rule with the file name filter mask, the FilterMask sets the target folder or files,it can include wild character ‘*’or ‘?’. For example: c:\test\*txt, the filter only monitors I/Os of the files end with ‘txt’ in the folder c:\test. To control the file I/O for the control filter driver, we can set the access flag for the filter rule, the access flags can be the combination of the bits as following enumeration.
 
+```
 typedef enum AccessFlag
 {
   EXCLUDE_FILTER_RULE					= 0X00000000,
@@ -78,7 +82,7 @@ typedef enum AccessFlag
   ALLOW_MAX_RIGHT_ACCESS				= 0xfffffff0,
 	
 };
-
+```
 
 AddFileFilterRule(ULONG  AccessFlag,WCHAR* FilterMask, ULONG FilterId)
  
