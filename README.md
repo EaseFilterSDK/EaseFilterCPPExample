@@ -43,9 +43,10 @@ Typedef  enum  FilterType
 };
 		
 SetFilterType(ULONG FilterType);
-```
 
 SetConnectionTimeout(ULONG TimeOutInSeconds);
+```
+
 Filter the file I/O with file filter rule
 To know which file we want to filter, we need to set the filter rule with the file name filter mask, the FilterMask sets the target folder or files,it can include wild character ‘*’or ‘?’. For example: c:\test\*txt, the filter only monitors I/Os of the files end with ‘txt’ in the folder c:\test. To control the file I/O for the control filter driver, we can set the access flag for the filter rule, the access flags can be the combination of the bits as following enumeration.
 
@@ -82,10 +83,10 @@ typedef enum AccessFlag
   ALLOW_MAX_RIGHT_ACCESS				= 0xfffffff0,
 	
 };
-```
 
 AddFileFilterRule(ULONG  AccessFlag,WCHAR* FilterMask, ULONG FilterId)
- 
+```
+
 Eexcluded files from the filter rule
 If you want to exclude the I/Os of some file for the filter rule, you can add the exclude file filter mask to the filter rule.
 AddExcludeFileMaskToFilterRule(WCHAR* FilterMask,WCHAR* ExcludeFileFilterMask);
@@ -94,13 +95,16 @@ AddExcludeFileMaskToFilterRule(WCHAR* FilterMask,WCHAR* ExcludeFileFilterMask);
 Example:
 Manage the file I/Os for files in folder c:\test, but exclude all the .txt files:
 
-
+```
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS, L"c:\\test\\*", 1);
 AddExcludeFileMaskToFilterRule(L"c:\\test\\*",L"*.txt");
+```
+
 Setup the filter rule only for the specific processes
 If you want to setup the filter rule only for some specific processes, you can add the include process name filter mask to the filter rule.
-AddIncludeProcessNameToFilterRule(WCHAR* FilterMask,WCHAR* IncludeProcessNameFilterMask);
 
+```
+AddIncludeProcessNameToFilterRule(WCHAR* FilterMask,WCHAR* IncludeProcessNameFilterMask);
 
 Example:
 Manage the file I/Os for files in folder c:\test only for process "notepad.exe":
@@ -146,6 +150,7 @@ Register the PRE_CREATE, only callback when the file opens with DELETE access.
 AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS, L"c:\\test\\*", 1);
 RegisterControlToFilterRule(L"c:\\test\\*",PRE_CREATE);
 AddRegisterIOFilterToFilterRule(L"c:\\test\\*",DELETE,0,0);
+```
 
 ## What can you do with the File Monitor Filter Driver SDK
 
