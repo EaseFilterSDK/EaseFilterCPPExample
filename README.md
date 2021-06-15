@@ -3,7 +3,7 @@ A C++ file security filter driver example implemented with EaseFilter File Secur
 
 EaseFilter file system filter driver is a kernel-mode component that runs as part of the Windows executive above the file system. The EaseFilter file system filter driver can intercept requests targeted at a file system or another file system filter driver. By intercepting the request before it reaches its intended target, the filter driver can extend or replace functionality provided by the original target of the request. The EaseFilter file system filter driver can log, observe, modify, or even prevent the I/O operations for one or more file systems or file system volumes.
 
-##What can you do with the EaseFilter SDK
+## What can you do with the EaseFilter SDK
 
 A.File and Folder Monitoring
   Monitor Windows file I/O activities in real time, track the file access and changes, monitor file and folder permission changes, audit who is writing, deleting, moving or reading files, report the user name and process name, get the user name and the ip address when the Windows file server's file is accessed by network user.
@@ -16,7 +16,7 @@ D.Process Monitoring and Protection
 E.Registry Monitoring and Protection
  Protect Windows core registry keys and values and prevent potentially damaging system configuration changes, besides operating system files. Get the notifications of each registry operation when the registry key was accessed or modified by the applications.
 
-##How to use EaseFilter SDK
+## How to use EaseFilter SDK
 
 The EaseFilter control file system filter driver SDK includes two components (EaseFlt.sys and FilterAPI.dll) with 32bit and 64bit version. EaseFlt.sys is the file system filter driver which provides a complete, modular environment for building active file system filters. FilterAPI.dll is a user mode DLL which is responsible for the communication between filter driver and your use mode application ,and it is also a wrapper DLL which exports the API to the user mode applications.
 Install/Uninstall the filter driver with admin privilege
@@ -143,7 +143,7 @@ AddFileFilterRule(ALLOW_MAX_RIGHT_ACCESS, L"c:\\test\\*", 1);
 RegisterControlToFilterRule(L"c:\\test\\*",PRE_CREATE);
 AddRegisterIOFilterToFilterRule(L"c:\\test\\*",DELETE,0,0);
 
-##What can you do with the File Monitor Filter Driver SDK
+## What can you do with the File Monitor Filter Driver SDK
 
 1. Monitor the file I/O events, get the notification of the new file creation, file was written, file was renamed, file was deleted, file security was changed, to know who ( user name and process name ) made those I/Os.
 To track the file I/O events, first we need to add the filter rule for the file name filter mask which we want to manage, then register the I/O events we want to track, the register I/O events can be the combination of the bits of the following enumeration. The events will be sent after the I/O was completed and the file handle was closed.
@@ -252,7 +252,7 @@ AddFileFilterRule(LEAST_ACCESS_FLAG, L"c:\\test\\*", 1);
 AddProcessRightsToFilterRule(L"c:\\test\\*",L"notepad.exe",ALLOW_MAX_RIGHT_ACCESS);
 AddProcessRightsToFilterRule(L"c:\\test\\*",L"wordpad.exe",ALLOW_MAX_RIGHT_ACCESS&(~(ALLOW_OPEN_WITH_CREATE_OR_OVERWRITE_ACCESS|ALLOW_WRITE_ACCESS|ALLOW_FILE_RENAME|ALLOW_FILE_DELETE|ALLOW_SET_INFORMATION));
 
-##What can you do with the Transparent File Encryption Filter Driver SDK
+## What can you do with the Transparent File Encryption Filter Driver SDK
 
 1. Automatically encrypt or decrypt the file in Windows kernel memory, always keep the file encryped on disk. Per file encryption on the fly, protect your sensitive files with data encryption at rest.
 Example:
@@ -293,7 +293,7 @@ AddFileFilterRule((ALLOW_MAX_RIGHT_ACCESS|FILE_ENCRYPTION_RULE)&(~ALLOW_ENCRYPT_
 unsigned char key[] = {0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4};
 AddEncryptionKeyToFilterRule(L"c:\\dropFolder\\*",sizeof(key),key);
 
-##What can you do with the Process Filter Driver SDK
+## What can you do with the Process Filter Driver SDK
 
 1. Get the notification of the process or thread creation, termination by registering the process callback control flag.
 Example:
@@ -322,7 +322,7 @@ AddFileControlToProcessByName(wcslen(L"notepad.exe")*2, L"notepad.exe", wcslen(L
 
 AddFileControlToProcessByName(wcslen(L"notepad.exe")*2, L"notepad.exe", wcslen(L"c:\\test\\*")*2,L"c:\\test\\*",ALLOW_MAX_RIGHT_ACCESS );
     
-##What can you do with the Registry Filter Driver SDK
+## What can you do with the Registry Filter Driver SDK
 
 1.Prevent the registries from being modified for the specific processes, restrict the registry access rights to the specific processes.
 Example:
