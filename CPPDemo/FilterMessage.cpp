@@ -44,15 +44,6 @@ DisplayFilterMessageInfo( IN	PMESSAGE_SEND_DATA pSendMessage )
 
 	__try
 	{
-		
-		BOOL ret = LookupAccountSid( NULL,
-									pSendMessage->Sid,
-									userName,
-									(LPDWORD)&userNameSize,
-									domainName,
-									(LPDWORD)&domainNameSize,
-									&snu); 
-	
 		if( pSendMessage->Status > STATUS_ERROR )
 		{
 			ChangeColour(FOREGROUND_RED);
@@ -63,17 +54,28 @@ DisplayFilterMessageInfo( IN	PMESSAGE_SEND_DATA pSendMessage )
 		}
 
 		VOLUME_INFO* pVolumeInfo = (VOLUME_INFO*)pSendMessage->DataBuffer;
-		if(FILTER_SEND_ATTACHED_VOLUME_INFO == pSendMessage->MessageType)
+		if(FILTER_SEND_ATTACHED_VOLUME_INFO == pSendMessage->FilterCommand)
 		{
-			PrintMessage( L"FILTER_SEND_ATTACHED_VOLUME_INFO\n VolumeName:%ws\nVolumeDosName:%ws\nvolume file system type:0x%0x\nDeviceCharacteristics:0x%0x\n\n"
+			PrintMessage( L"FILTER_SEND_ATTACHED_VOLUME_INFO\nVolumeName:%ws\nVolumeDosName:%ws\nvolume file system type:0x%0x\nDeviceCharacteristics:0x%0x\n\n"
 			,pVolumeInfo->VolumeName, pVolumeInfo->VolumeDosName, pVolumeInfo->VolumeFilesystemType, pVolumeInfo->DeviceCharacteristics);
 			return;
 		}
-		else if(FILTER_SEND_DETACHED_VOLUME_INFO == pSendMessage->MessageType)
+		else if(FILTER_SEND_DETACHED_VOLUME_INFO == pSendMessage->FilterCommand)
 		{
 			PrintMessage( L"FILTER_SEND_DETACHED_VOLUME_INFO\nVolumeName:%ws\n VolumeDosName:%ws\nvolume file system type:0x%0x\nDeviceCharacteristics:0x%0x\n\n"
 			,pVolumeInfo->VolumeName, pVolumeInfo->VolumeDosName, pVolumeInfo->VolumeFilesystemType, pVolumeInfo->DeviceCharacteristics);
 			return;
+		}
+
+		if(pSendMessage->SidLength > 0 )
+		{
+			BOOL ret = LookupAccountSid( NULL,
+								pSendMessage->Sid,
+								userName,
+								(LPDWORD)&userNameSize,
+								domainName,
+								(LPDWORD)&domainNameSize,
+								&snu); 
 		}
 
 		
@@ -85,6 +87,46 @@ DisplayFilterMessageInfo( IN	PMESSAGE_SEND_DATA pSendMessage )
 
 		ChangeColour(FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
 	
+		if(FILTER_SEND_FILE_CHANGED_EVENT == pSendMessage->FilterCommand)
+		{
+			 if ((pSendMessage->InfoClass & FILE_WAS_CREATED ) > 0)
+            {
+                PrintMessage( L"New file %ws was created.\n",pSendMessage->FileName);
+            }
+
+            if ((pSendMessage->InfoClass & FILE_WAS_WRITTEN ) > 0)
+            {
+                PrintMessage( L"File %ws was written.\n",pSendMessage->FileName);
+            }
+
+            if ((pSendMessage->InfoClass & FILE_WAS_DELETED ) > 0)
+            {
+                PrintMessage( L"File %ws was deleted.\n",pSendMessage->FileName);
+            }
+
+            if ((pSendMessage->InfoClass & FILE_INFO_CHANGED ) > 0)
+            {
+				PrintMessage( L"File %ws information was changed.\n",pSendMessage->FileName);
+            }
+
+            if ((pSendMessage->InfoClass & FILE_WAS_RENAMED ) > 0)
+            {
+                if (pSendMessage->DataBufferLength > 0)
+                {
+                    PrintMessage( L"Rename file %ws to newname %ws\n"
+					,pSendMessage->FileName,pSendMessage->DataBuffer);
+                }
+
+            }
+
+            if ((pSendMessage->InfoClass & FILE_SECURITY_CHANGED ) > 0)
+            {
+               PrintMessage( L"File %ws security was changed.\n",pSendMessage->FileName);
+            }
+
+			return;
+		}
+
 		switch( pSendMessage->MessageType )
 		{			
 			case PRE_CREATE:
