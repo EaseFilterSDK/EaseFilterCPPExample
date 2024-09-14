@@ -230,7 +230,7 @@ FilterControl::SendFileFilterRuleToFilter(FileFilterRule* fileFilter)
                 return false;
             }
         }
-    }
+    }   
 
 	//all the I/O from the excluded user will pass through, won't be intercepted by filte driver.
 	for(std::vector<std::wstring>::iterator excludeUserName = fileFilter->ExcludeUserNameList.begin(); 
@@ -246,8 +246,24 @@ FilterControl::SendFileFilterRuleToFilter(FileFilterRule* fileFilter)
         }
     }
 
+    //set the access rights to the specific user, you can add or remove the user access rights here.
+    std::map<std::wstring, ULONG>::iterator it = fileFilter->UserNameAccessRightList.begin();
+    while (it != fileFilter->UserNameAccessRightList.end())
+    {
+        std::wstring userName = it->first;
+        ULONG accessFlag = it->second;
+
+        if (!AddUserRightsToFilterRule(&fileFilter->FileFilterMask[0], &userName[0], accessFlag))
+        {
+            PrintLastErrorMessage(L"AddUserRightsToFilterRule failed.");
+            return false;
+        }
+
+        ++it;
+    }
+
 	//set the access rights to the specific process, you can add or remove the process access rights here.
-	std::map<std::wstring, ULONG>::iterator it = fileFilter->ProcessNameAccessRightList.begin();
+	it = fileFilter->ProcessNameAccessRightList.begin();
     while (it != fileFilter->ProcessNameAccessRightList.end())
     {
 		std::wstring processName = it->first;
@@ -463,12 +479,13 @@ FilterControl::SendConfigSettingsToFilter()
 VOID
 SendNotification(PMESSAGE_SEND_DATA messageSend)
 {
-	if (messageSend->FilterCommand == FILTER_SEND_REG_CALLBACK_INFO)
+	if (messageSend->FilterCommand == FILTER_SEND_REG_CALLBACK_INFO || messageSend->FilterCommand == FILTER_SEND_DENIED_REGISTRY_ACCESS_EVENT)
     {
         SendRegistryFilterNotification(messageSend);
     }
     else if( ( messageSend->FilterCommand >= FILTER_SEND_PROCESS_CREATION_INFO &&  messageSend->FilterCommand <= FILTER_SEND_THREAD_HANDLE_INFO)
-			|| (messageSend->FilterCommand == FILTER_SEND_DENIED_PROCESS_TERMINATED_EVENT) )
+			|| (messageSend->FilterCommand == FILTER_SEND_DENIED_PROCESS_CREATION_EVENT)
+            || (messageSend->FilterCommand == FILTER_SEND_DENIED_PROCESS_TERMINATED_EVENT)  )
     {
 	   SendProcessFilterNotification(messageSend);
     }
@@ -521,7 +538,7 @@ __try
 }
 __except( EXCEPTION_EXECUTE_HANDLER  )
 {         
-	printf("\n\nMessageCallback handler got exception, messageId:%d messageType:0x%0x FilterCommand:0x%0x fileName:%ws\n\n"
+	printf("\n\nMessageCallback handler got exception, messageId:%d messageType:0x%I64x FilterCommand:0x%0x fileName:%ws\n\n"
 		,messageSend->MessageId, messageSend->MessageType, messageSend->FilterCommand, messageSend->FileName );
 
 	ret = false;

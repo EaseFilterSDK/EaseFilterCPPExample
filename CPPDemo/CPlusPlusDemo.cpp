@@ -21,7 +21,6 @@
 #include "stdafx.h"
 #include "Tools.h"
 #include "FilterAPI.h"
-#include "UnitTest.h"
 #include "WindowsService.h"
 #include "FilterControl.h"
 
@@ -93,6 +92,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	ULONG	filterType = FILE_SYSTEM_MONITOR;
 	BOOL	ret = FALSE;
 	
+	PrintPassedMessage(L"test Install filter driver succeeded!");
+
 	if(argc <= 1)
 	{
 		Usage();
@@ -102,6 +103,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	TCHAR op = *argv[1];
 
 	EnableDebugPrivileges();
+
+	PrintPassedMessage(L"before Install filter driver succeeded!");
+
+	FilterControl* filterControl = FilterControl::GetSingleInstance();
+
+	//
+	PrintPassedMessage(L"after Install filter driver succeeded!");
 
 	switch(op)
 	{
@@ -145,37 +153,14 @@ int _tmain(int argc, _TCHAR* argv[])
 			if( !ret )
 			{
 				PrintLastErrorMessage( L"UnInstallDriver failed.");
-				return 1;
+				break;
 			}
 
 			PrintPassedMessage(L"UnInstallDriver succeeded!");
 
 			break;
 
-		}
-
-		case 't': //driver unit test 
-		{
-			
-			ret = UnInstallDriver();
-			Sleep(2000);
-
-			ret = InstallDriver();	
-			if( !ret )
-			{
-				PrintLastErrorMessage( L"InstallDriver failed.");
-				return 1;
-			}
-
-			PrintPassedMessage(L"Install filter driver succeeded!\n");
-
-			//this is the demo how to use filter driver SDK.
-			FilterUnitTest();
-
-
-			break;
-
-		}
+		}		
 
 		case 'c': filterType = FILE_SYSTEM_CONTROL; //start control filter		
 		case 'm':
@@ -204,11 +189,11 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 
 
-			ULONG allPostIO = POST_CREATE|POST_FASTIO_READ|POST_CACHE_READ|POST_NOCACHE_READ|POST_PAGING_IO_READ;
+			ULONGLONG allPostIO = POST_CREATE|POST_FASTIO_READ|POST_CACHE_READ|POST_NOCACHE_READ|POST_PAGING_IO_READ;
 				allPostIO |= POST_FASTIO_WRITE|POST_CACHE_WRITE|POST_NOCACHE_WRITE|POST_PAGING_IO_WRITE|POST_QUERY_INFORMATION;
 				allPostIO |= POST_SET_INFORMATION|POST_DIRECTORY|POST_QUERY_SECURITY|POST_SET_SECURITY|POST_CLEANUP|POST_CLOSE;
 
-			WCHAR* fileFilterMask = GetFilterMask();
+			WCHAR* fileFilterMask = L"c:\\test\\*";
 			ULONG ioCallbackClass = allPostIO;
 			ULONG accessFlag = ALLOW_MAX_RIGHT_ACCESS;		
 
@@ -228,13 +213,18 @@ int _tmain(int argc, _TCHAR* argv[])
 				accessFlag = std::stoul (argv[4],nullptr,10);
 			}					
 
-			FilterControl* filterControl = FilterControl::GetSingleInstance();
-
 			FileFilterRule fileFilterRule(fileFilterMask);
 			fileFilterRule.AccessFlag = accessFlag;
+
+			//block the new file cration/rename/delete/write in the filter driver
+			/*fileFilterRule.AccessFlag = ALLOW_MAX_RIGHT_ACCESS & (~(ALLOW_OPEN_WITH_CREATE_OR_OVERWRITE_ACCESS|ALLOW_FILE_RENAME|ALLOW_FILE_DELETE|ALLOW_WRITE_ACCESS));*/
+
 			fileFilterRule.BooleanConfig = ENABLE_MONITOR_EVENT_BUFFER;
 			fileFilterRule.FileChangeEventFilter = FILE_WAS_CREATED|FILE_WAS_WRITTEN|FILE_WAS_RENAMED|FILE_WAS_DELETED|FILE_WAS_READ;
-			fileFilterRule.MonitorFileIOEventFilter = ioCallbackClass;
+			//fileFilterRule.MonitorFileIOEventFilter = ioCallbackClass;
+		
+			//you can filter the file I/O only opens with this option( file is going to be created.)
+			//fileFilterRule.FilterDisposition = FILE_CREATE | FILE_OPEN_IF | FILE_OVERWRITE | FILE_OVERWRITE_IF;
 
 			if( filterType == FILE_SYSTEM_CONTROL)
 			{
@@ -250,9 +240,12 @@ int _tmain(int argc, _TCHAR* argv[])
                 //If you open file c:\test\MyTest.txt, it will reparse to the file d:\reparse\MyTest.doc.
 				//fileFilterRule.ReparseFileFilterMask= L" d:\\reparse\*doc";
 
-				//get the control callback I/O request.
-				fileFilterRule.ControlFileIOEventFilter = ioCallbackClass;				
-			
+				//get the control callback I/O request, you can block the I/O request in the pre-IO
+				fileFilterRule.ControlFileIOEventFilter = ioCallbackClass;
+
+				//You can allow/block the file rename/delete in the callback handler by register PRE_RENAME_FILE|PRE_DELETE_FILE.
+				//fileFilterRule.ControlFileIOEventFilter = PRE_CREATE|PRE_RENAME_FILE|PRE_DELETE_FILE;	
+
 				//disable the file being renamed, deleted and written access rights.
 				ULONG processAccessRights = accessFlag & (~(ALLOW_FILE_RENAME|ALLOW_FILE_DELETE|ALLOW_WRITE_ACCESS));
 				//set this new access rights to process cmd, cmd can't rename,delete or write to the file.
@@ -272,7 +265,10 @@ int _tmain(int argc, _TCHAR* argv[])
 			ULONG globalBooleanConfig = ENABLE_SEND_DENIED_EVENT;
 			filterControl->globalBooleanConfig = globalBooleanConfig;
 
-			filterControl->StartFilter(filterType,threadCount,connectionTimeout,registerKey);
+			if (!filterControl->StartFilter(filterType, threadCount, connectionTimeout, registerKey))
+			{
+				break;
+			}
 
 			if (op == 'm')
 			{
@@ -291,9 +287,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			//the process can be termiated now.
 			//RemoveProtectedProcessId(GetCurrentProcessId());
 
-			filterControl->StopFilter();
-			delete filterControl;
-
 			break;
 
 		}
@@ -307,10 +300,10 @@ int _tmain(int argc, _TCHAR* argv[])
 			if( !ret )
 			{
 				PrintLastErrorMessage( L"InstallDriver failed.");
-				return 1;
+				break;
 			}
 
-			WCHAR* fileFilterMask = GetFilterMask();
+			WCHAR* fileFilterMask = L"c:\\test\\*";
 			ULONG ioRegistration = 0;
 			ULONG accessFlag = ALLOW_MAX_RIGHT_ACCESS|ENABLE_FILE_ENCRYPTION_RULE;			
 			
@@ -321,8 +314,6 @@ int _tmain(int argc, _TCHAR* argv[])
 				fileFilterMask = argv[2];
 			}			
 			
-			FilterControl* filterControl = FilterControl::GetSingleInstance();
-
 			FileFilterRule fileFilterRule(fileFilterMask);
 			fileFilterRule.AccessFlag = accessFlag;
 
@@ -335,7 +326,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			unsigned char key[] = {0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4};
 			if(!fileFilterRule.set_EncryptionKey(key,sizeof(key)))
 			{
-				goto Exit;
+				break;
 			}
 
 			//get raw encrypted data access rights.
@@ -347,16 +338,17 @@ int _tmain(int argc, _TCHAR* argv[])
 			fileFilterRule.AddAccessRightsToProcessName(L"explorer.exe", rawEncryptionRights);
 
 			filterControl->AddFileFilter(fileFilterRule);
-			filterControl->StartFilter(filterType,threadCount,connectionTimeout,registerKey);
+			
+			if (!filterControl->StartFilter(filterType, threadCount, connectionTimeout, registerKey))
+			{
+				break;
+			}
 
 			_tprintf(_T("\n\nStart Encryption for folder %ws,\r\nThe new created file will be encrypted, the encrypted file can be decrypted automatically in this folder\
 				.\r\n Press any key to stop the filter driver.\n"),fileFilterMask);
 
 			system("pause");
 			getchar();
-Exit:
-			filterControl->StopFilter();
-			delete filterControl;
 
 			break;
 
@@ -371,7 +363,7 @@ Exit:
 			if( !ret )
 			{
 				PrintLastErrorMessage( L"InstallDriver failed.");
-				return 1;
+				break;
 			}
 
 					
@@ -394,8 +386,6 @@ Exit:
 
 			filterType = FILE_SYSTEM_PROCESS;
 			
-			FilterControl* filterControl = FilterControl::GetSingleInstance();
-
 			ProcessFilterRule processFilterRule(processFilterMask);
 			processFilterRule.ControlFlag = controlFlag;
 
@@ -405,14 +395,14 @@ Exit:
 			ULONG accessFlag = ALLOW_MAX_RIGHT_ACCESS & ~(ALLOW_OPEN_WITH_CREATE_OR_OVERWRITE_ACCESS | ALLOW_WRITE_ACCESS | ALLOW_FILE_RENAME | ALLOW_FILE_DELETE);
 			processFilterRule.AddFileAccessRightsToProcess(L"c:\\test\\*", accessFlag);
 
-			filterControl->StartFilter(filterType,threadCount,connectionTimeout,registerKey);
+			if (!filterControl->StartFilter(filterType, threadCount, connectionTimeout, registerKey))
+			{
+				break;
+			}
 			
 			_tprintf(_T("Start Process filter, processFilterMask=%s  controlFlag:0X%0X \n\n Press any key to stop.\n"), processFilterMask, controlFlag);
 
 			getchar();
-			
-			filterControl->StopFilter();
-			delete filterControl;
 
 			break;
 
@@ -432,9 +422,7 @@ Exit:
 
 			_tprintf(_T("Start registry filter driver test. press any key to stop.\n\n"));
 
-			filterType = FILE_SYSTEM_REGISTRY; 
-
-			FilterControl* filterControl = FilterControl::GetSingleInstance();
+			filterType = FILE_SYSTEM_REGISTRY; 			
 
 			WCHAR* processNameFilterMask = L"*";
 			WCHAR* keyNameFilterMask = L"*";
@@ -449,30 +437,33 @@ Exit:
 				keyNameFilterMask = argv[3];
 			}
 
-			ULONG callbackClass = Max_Reg_Callback_Class;
+			ULONG controlFlag = REG_MAX_ACCESS_FLAG;
 			if (argc >= 5)
 			{
-				callbackClass = std::stoul(argv[5], nullptr, 10);
+				controlFlag = std::stoul(argv[5], nullptr, 10);
 			}
 
 			RegistryFilterRule registryFilterRule(processNameFilterMask);
 			
 			registryFilterRule.RegistryKeyNameFilterMask = keyNameFilterMask;
 
-			//you can block the registry key being renamed or deleted.
-			//ULONG controlFlag = REG_MAX_ACCESS_FLAG & (~(REG_ALLOW_RENAME_KEY|REG_ALLOW_DELETE_KEY));
-			registryFilterRule.ControlFlag = callbackClass;
+			//you can block the registry key being renamed/deleted/created.
+			controlFlag = REG_MAX_ACCESS_FLAG & (~(REG_ALLOW_RENAME_KEY | REG_ALLOW_DELETE_KEY | REG_ALLOW_CREATE_KEY));
+
+			registryFilterRule.ControlFlag = controlFlag;
 			registryFilterRule.RegCallbackClass = Max_Reg_Callback_Class;
 
 			filterControl->AddRegistryFilter(registryFilterRule);
-			filterControl->StartFilter(filterType,threadCount,connectionTimeout,registerKey);
 
-			_tprintf(_T("Start Registry filter, processNameFilterMask=%s keyNameFilterMask=%s controlFlag:0X%0X \n\n Press any key to stop.\n"), processNameFilterMask, keyNameFilterMask, callbackClass);
+			if (!filterControl->StartFilter(filterType, threadCount, connectionTimeout, registerKey))
+			{
+				break;
+			}
+
+			_tprintf(_T("Start Registry filter, processNameFilterMask=%s keyNameFilterMask=%s controlFlag:0X%0X \n\n Press any key to stop.\n")
+				,processNameFilterMask, keyNameFilterMask, controlFlag);
 								
 			getchar();
-			
-			filterControl->StopFilter();
-			delete filterControl;
 
 			break;
 
@@ -486,6 +477,8 @@ Exit:
 
 	}
 
+	filterControl->StopFilter();
+	delete filterControl;
 		
 	return 0;
 }

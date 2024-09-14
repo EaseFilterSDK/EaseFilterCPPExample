@@ -76,7 +76,24 @@
         /// set the status to AccessDenied if you want to block this IO.
         ULONG ReturnStatus;
         /// Set it to true, if the return data was modified. 
-        BOOL IsDataModified;
+        BOOL IsDataModified;      
+
+        std::wstring hex(uint32_t value)
+        {
+            WCHAR str[16];
+            WCHAR* p = &str[16];
+            do {
+                p--;
+                uint32_t digit = value % 16;
+                value /= 16;
+                *p = digit >= 10 ? 'a' + (digit - 10) : '0' + digit;
+            } while (value > 0);
+            p--;
+            *p = 'x';
+            p--;
+            *p = '0';
+            return std::wstring(p, &str[16] - p);
+        };
 
         FileIOEventArgs(PMESSAGE_SEND_DATA messageSend)
         {		
@@ -554,7 +571,7 @@
                 networkInfo = *(FILE_NETWORK_OPEN_INFORMATION*)messageSend->DataBuffer;
            
 				Description = L"FileNetworkOpenInformation,file size:" + std::to_wstring(networkInfo.EndOfFile.QuadPart);
-				Description +=  L",file attributes:" +  std::to_wstring((ULONGLONG)networkInfo.FileAttributes);
+				Description +=  L",file attributes:" + hex((ULONG)networkInfo.FileAttributes);
             }
      
         }
@@ -574,7 +591,40 @@
             if (messageSend->DataBufferLength > 0)
             {
 				newFileName.assign((WCHAR*)messageSend->DataBuffer);
-				Description = L"File was renamed to " + newFileName;
+
+                if (messageSend->MessageType == PRE_SET_INFORMATION)
+                {
+                    Description = L"File is going to be renamed to " + newFileName;
+                }
+                else if(messageSend->Status == STATUS_SUCCESS )
+                {   
+                    Description = L"File was renamed to " + newFileName;
+                }
+                else
+                {
+                    Description = L"Rename file to " + newFileName + L" failed, status:" + hex(messageSend->Status);
+                }
+            }
+        }
+    };
+
+    class FileDispositionEventArgs : public FileIOEventArgs
+    {
+    public:
+
+        FileDispositionEventArgs(PMESSAGE_SEND_DATA messageSend) : FileIOEventArgs(messageSend)
+        {
+            if (messageSend->MessageType == PRE_SET_INFORMATION)
+            {
+                Description = L"File is going to be deleted";
+            }
+            else if (messageSend->Status == STATUS_SUCCESS)
+            {
+                Description = L"File was deleted";
+            }
+            else
+            {
+                Description = L"Delete file failed, status:" + hex(messageSend->Status);
             }
         }
     };
@@ -722,6 +772,28 @@
         {
             EventName = L"DeniedProcessTerminated";
             Description = L"Block killing process ungratefully.";
+        }
+
+    };
+
+    class DeniedProcessCreationEventArgs : public FileIOEventArgs
+    {
+    public:
+        DeniedProcessCreationEventArgs(PMESSAGE_SEND_DATA messageSend) : FileIOEventArgs(messageSend)
+        {
+            EventName = L"DeniedProcessCreation";
+            Description = L"Process creation was denied.";
+        }
+
+    };
+
+    class DeniedRegistryAccessEventArgs : public FileIOEventArgs
+    {
+    public:
+        DeniedRegistryAccessEventArgs(PMESSAGE_SEND_DATA messageSend) : FileIOEventArgs(messageSend)
+        {
+            EventName = L"DeniedRegistryAccess";
+            Description = L"Registry access was denied.";
         }
 
     };
@@ -877,13 +949,16 @@
         /// </summary>
         ULONG InfoClass;
 
-
 		RegistryEventArgs(PMESSAGE_SEND_DATA messageSend) : FileIOEventArgs(messageSend)
         {
             RegCallbackClass = messageSend->MessageType;
             InfoClass = messageSend->InfoClass;
 
-            if (messageSend->Status == STATUS_SUCCESS)
+            if (messageSend->Status != STATUS_SUCCESS)
+            {
+                Description = L"Registry access failed, RegCallbackClass " + hex(RegCallbackClass) + L", status: " + hex(messageSend->Status);
+            }
+            else
             {
                 switch (RegCallbackClass)
                 {

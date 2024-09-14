@@ -20,7 +20,6 @@
 #include "stdafx.h"
 #include "Tools.h"
 #include "FilterAPI.h"
-#include "UnitTest.h"
 #include "WindowsService.h"
 #include "FilterControl.h"
 #include "FilterRule.h"
@@ -208,7 +207,7 @@ DWORD WINAPI ServiceWorkerThread (LPVOID lpParam)
 				allPostIO |= POST_FASTIO_WRITE|POST_CACHE_WRITE|POST_NOCACHE_WRITE|POST_PAGING_IO_WRITE|POST_QUERY_INFORMATION;
 				allPostIO |= POST_SET_INFORMATION|POST_DIRECTORY|POST_QUERY_SECURITY|POST_SET_SECURITY|POST_CLEANUP|POST_CLOSE;
 
-			WCHAR* fileFilterMask = GetFilterMask();
+			WCHAR* fileFilterMask = L"c:\\test\\*";
 			ULONG ioCallbackClass = allPostIO;
 			ULONG accessFlag = ALLOW_MAX_RIGHT_ACCESS;		
 

@@ -53,7 +53,7 @@ SendFileFilterNotification(PMESSAGE_SEND_DATA messageSend)
     else if (messageSend->MessageType == POST_CREATE)
     {
         FileCreateEventArgs* fileCreateEventArgs  = new FileCreateEventArgs(messageSend);
-       /* if (fileCreateEventArgs->isNewFileCreated )
+        if (fileCreateEventArgs->isNewFileCreated )
         {
             fileCreateEventArgs->EventName = L"OnNewFileCreated";
         }
@@ -65,19 +65,10 @@ SendFileFilterNotification(PMESSAGE_SEND_DATA messageSend)
         if (fileCreateEventArgs->isDeleteOnClose)
         {
             fileCreateEventArgs->EventName = L"OnOpenFileWithDeleteOnClose";
-        }*/
+        }
 
-		//DisplayFileIOMessage(fileCreateEventArgs);
+		DisplayFileIOMessage(fileCreateEventArgs);
 
-    }
-    else if (messageSend->MessageType == PRE_CACHE_READ
-            || messageSend->MessageType == PRE_FASTIO_READ
-            || messageSend->MessageType == PRE_NOCACHE_READ
-            || messageSend->MessageType == PRE_PAGING_IO_READ)
-    {
-         FileReadEventArgs* fileReadEventArgs  = new FileReadEventArgs(messageSend);
-         fileReadEventArgs->EventName = L"OnPreFileRead-" + fileReadEventArgs->readType;
-		 DisplayFileIOMessage(fileReadEventArgs);
     }
     else if (messageSend->MessageType == POST_CACHE_READ
         || messageSend->MessageType == POST_FASTIO_READ
@@ -87,15 +78,6 @@ SendFileFilterNotification(PMESSAGE_SEND_DATA messageSend)
          FileReadEventArgs* fileReadEventArgs  = new FileReadEventArgs(messageSend);
          fileReadEventArgs->EventName = L"OnFileRead-" + fileReadEventArgs->readType;
 		 DisplayFileIOMessage(fileReadEventArgs);
-    }
-    else if (messageSend->MessageType == PRE_CACHE_WRITE
-            || messageSend->MessageType == PRE_FASTIO_WRITE
-            || messageSend->MessageType == PRE_NOCACHE_WRITE
-            || messageSend->MessageType == PRE_PAGING_IO_WRITE)
-    {
-		FileWriteEventArgs* fileWriteEventArgs  = new FileWriteEventArgs(messageSend);
-        fileWriteEventArgs->EventName = L"OnPreFileWrite-" + fileWriteEventArgs->writeType;
-		DisplayFileIOMessage(fileWriteEventArgs);
     }
     else if (messageSend->MessageType == POST_CACHE_WRITE
     || messageSend->MessageType == POST_FASTIO_WRITE

@@ -13,7 +13,7 @@
 
 //Purchase a license key with the link: http://www.EaseFilter.com/Order.htm
 //Email us to request a trial key: info@EaseFilter.com //free email is not accepted.
-#define	registerKey "**************************************"
+#define	registerKey "*****************************************"
 
 #define MESSAGE_SEND_VERIFICATION_NUMBER	0xFF000001
 #define	INET_ADDR_STR_LEN					22
@@ -237,7 +237,7 @@ typedef enum _FilterCommand
     /// send the event when the process creation was blocked by the config setting.
 	// if the flag ENABLE_SEND_DENIED_EVENT was enabled in global boolean setting.
     /// </summary>
-    FILTER_SEND_DENIED_PROCESS_EVENT = 0x00010012,
+    FILTER_SEND_DENIED_PROCESS_CREATION_EVENT = 0x00010012,
     /// <summary>
     /// send the event when the registry access was blocked by the config setting.
 	// if the flag ENABLE_SEND_DENIED_EVENT was enabled in global boolean setting.

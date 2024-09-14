@@ -8,9 +8,13 @@ VOID
 SendProcessFilterNotification(PMESSAGE_SEND_DATA messageSend)
 {
     ProcessEventArgs* processEventArgs = new ProcessEventArgs(messageSend);
-    if (messageSend->FilterCommand == FILTER_SEND_DENIED_PROCESS_EVENT)
+    if (messageSend->FilterCommand == FILTER_SEND_DENIED_PROCESS_CREATION_EVENT)
     {
         processEventArgs->EventName = L"ProcessCreationWasBlocked";		
+    }
+    else if (messageSend->FilterCommand == FILTER_SEND_DENIED_PROCESS_TERMINATED_EVENT)
+    {
+        processEventArgs->EventName = L"ProcessTerminationWasBlocked";
     }
     else if (messageSend->FilterCommand == FILTER_SEND_PROCESS_TERMINATION_INFO)
     {

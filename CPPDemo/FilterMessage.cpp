@@ -19,7 +19,6 @@
 #include "Tools.h"
 #include "FilterAPI.h"
 #include "FilterMessage.h"
-#include "UnitTest.h"
 
 #define PrintMessage	wprintf //ToDebugger
 

@@ -81,8 +81,6 @@ EncryptionHandler(
 			//if you want to decrypt the file, then return status success, and the encryption key and iv.
 			messageReply->ReturnStatus = STATUS_SUCCESS;
 
-			wprintf(L"Encrypted file :%ws is requesting encryption key and iv,\nThe embedded tag data:%ws, return status:%0x\n"
-				,messageSend->FileName,messageSend->DataBuffer,messageReply->ReturnStatus );
 		}
 
         //Here we return the default test iv and key to the filter driver, you can replace it with your own iv and key.

@@ -348,7 +348,7 @@ public:
 			||	(keyLength != 16 && keyLength != 24 && keyLength != 32))
 		{
 			//this is not valid key.
-			printf("The key length:%d is invalid, it has to be 16, 24 or 32 bytes\n");
+			printf("The key length:%d is invalid, it has to be 16, 24 or 32 bytes\n",keyLength);
 			return false;
 		}
 
